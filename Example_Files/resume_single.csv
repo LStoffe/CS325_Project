@@ -1,6 +1,41 @@
-name,email,phone,linkedin,github,portfolio,skills,education_compact,experience_compact,resume_text_clean
-LOGAN STOFFEL,logan.stoffel@example.com,314) 555-1212,linkedin.com/in/loganst,github.com/loganst,,agile; aws; c; c++; ci/cd; django; docker; flask; git; github; java; javascript; linux; mips; mysql; node; pandas; php; python; react; rest; sql; sqlite,"B.S. in Computer Science, University of Missouri – St. Louis (UMSL), May 2025 GPA: 3.72/4.00 Minor: Mathematics Honors: Dean’s List (2023, 2024) Relevant Coursework: Data Structures & Algorithms, Databases, Operating Systems, Computer Architecture, Computer Networks, Software Engineering, Web Development","Teaching Assistant — UMSL, Computer Science Dept. (Aug 2024 – May 2025)
- Held office hours, graded assignments, and created example solutions for discrete mathematics and
+Email,Phone,resume_text_clean
+logan.stoffel@example.com,(314) 555-1212,"LOGAN STOFFEL
+St. Louis, MO (cid:127) (314) 555-1212 (cid:127) logan.stoffel@example.com
+linkedin.com/in/loganst (cid:127) github.com/loganst
+SUMMARY
+Computer Science graduate with hands-on experience in fullnstack development, data structures, and systems
+programming. Comfortable building productionnquality features, collaborating via Git, and deploying to cloud
+environments.
+EDUCATION
+B.S. in Computer Science, University of Missouri – St. Louis (UMSL), May 2025
+GPA: 3.72/4.00 (cid:127) Minor: Mathematics (cid:127) Honors: Dean’s List (2023, 2024)
+Relevant Coursework: Data Structures & Algorithms, Databases, Operating Systems, Computer Architecture,
+Computer Networks, Software Engineering, Web Development
+TECHNICAL SKILLS
+Languages: Python, Java, C, C++, JavaScript, SQL
+Frameworks: Flask, Django, Node, React
+Tools: Git, Linux, Docker, AWS, CI/CD
+Databases: PostgreSQL, MySQL, SQLite
+PROJECTS
+(cid:127) Shopping Website (PHP/SQL): Built login, admin CRUD, category pages, search, and cart with role-based
+access control.
+(cid:127) MIPS Binary Converter (C++): Parsed binary, handled endianness, wrote outputs with robust file I/O and
+pointer arithmetic.
+(cid:127) Graph Toolkit (Python): Implemented BFS/DFS, bipartite checks, and adjacency matrix utilities; added unit
+tests.
+INTERNSHIPS
+Software Engineering Intern — Gateway FinTech, St. Louis, MO (May 2024 – Aug 2024)
+(cid:127) Implemented REST endpoints in Flask and optimized SQL queries, reducing average response time by 28%.
+(cid:127) Built React components for onboarding flows; collaborated in Agile sprints and code reviews on GitHub.
+(cid:127) Containerized a microservice with Docker and added a CI step to run unit tests on pull requests.
+IT Intern — Local Tech Co., St. Louis, MO (May 2023 – Aug 2023)
+(cid:127) Automated CSV cleanup and validation with Python/pandas for a data quality initiative.
+(cid:127) Assisted migration of a legacy PHP app to a modern stack, improving page load times by ~35%.
+(cid:127) Documented internal tooling and created a short user guide for nonntechnical staff.
+EXPERIENCE
+Teaching Assistant — UMSL, Computer Science Dept. (Aug 2024 – May 2025)
+(cid:127) Held office hours, graded assignments, and created example solutions for discrete mathematics and
 algorithms.
- Mentored students on recursion, BignO analysis, and data structure tradenoffs.
-ADDITIONAL",logan stoffel logan stoffel example com 314 555 1212 linkedin com loganst github com loganst agile aws c c ci cd django docker flask git github java javascript linux mips mysql node pandas php python react rest sql sqlite b s computer science university missouri st louis umsl may 2025 gpa 3 72 4 00 minor mathematics honors dean s list 2023 2024 relevant coursework data structures algorithms databases operating systems computer architecture computer networks software engineering web development teaching assistant umsl computer science dept aug 2024 may 2025 held office hours graded assignments created example solutions discrete mathematics algorithms mentored students recursion bigno analysis data structure tradenoffs additional logan stoffel st louis mo 314 555 1212 logan stoffel example com linkedin com loganst github com loganst summary computer science graduate hands experience fullnstack development data structures systems programming comfortable building productionnquality features collaborating via git deploying cloud environments education b s computer science university missouri st louis umsl may 2025 gpa 3 72 4 00 minor mathematics honors dean s list 2023 2024 relevant coursework data structures algorithms databases operating systems computer architecture computer networks software engineering web development technical skills languages python java c c javascript sql frameworks flask django node react tools git linux docker aws ci cd databases postgresql mysql sqlite projects shopping website php sql built login admin crud category pages search cart role based access control mips binary converter c parsed binary handled endianness wrote outputs robust file o pointer arithmetic graph toolkit python implemented bfs dfs bipartite checks adjacency matrix utilities added unit tests internships software engineering intern gateway fintech st louis mo may 2024 aug 2024 implemented rest endpoints flask optimized sql queries reducing average response time 28 built react components onboarding flows collaborated agile sprints code reviews github containerized microservice docker added ci step run unit tests pull requests intern local tech co st louis mo may 2023 aug 2023 automated csv cleanup validation python pandas data quality initiative assisted migration legacy php app modern stack improving page load times 35 documented internal tooling created short user guide nonntechnical staff experience teaching assistant umsl computer science dept aug 2024 may 2025 held office hours graded assignments created example solutions discrete mathematics algorithms mentored students recursion bigno analysis data structure tradenoffs additional awards dean s list 2023 2024 interests mtg commander hackathons woodworking
+(cid:127) Mentored students on recursion, BignO analysis, and data structure tradenoffs.
+ADDITIONAL
+Awards: Dean’s List (2023, 2024) (cid:127) Interests: MTG Commander, Hackathons, Woodworking"
