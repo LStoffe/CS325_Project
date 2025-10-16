@@ -1,4 +1,4 @@
-# Adzuna Toolbox (Full GUI Pipeline)
+# Adzuna Toolbox 
 
 ## Overview
 
@@ -9,7 +9,7 @@ It connects to the [Adzuna Jobs API](https://developer.adzuna.com/), retrieves j
 
 ## Features
 
-The pipeline is divided into **five stages**, all accessible from a single GUI window:
+The program is divided into **five stages**, all accessible from a single GUI window:
 
 | Stage                       | Description                                                                                               |
 | --------------------------- | --------------------------------------------------------------------------------------------------------- |

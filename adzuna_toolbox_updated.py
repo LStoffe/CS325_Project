@@ -1,32 +1,10 @@
 # =============================================================
-#  Adzuna Toolbox (Full GUI Pipeline)
+#  Adzuna Toolbox (Full GUI Pipeline with Assets Directory)
 # -------------------------------------------------------------
 #  Description:
-#     A complete end-to-end job/resume analysis suite using the
-#     Adzuna Jobs API with a Tkinter GUI, including:
-#       0) Fetch jobs (full pagination + credential check)
-#       1) Clean job CSV (NLTK lemmatizer + stopwords)
-#       2) Extract resume → CSV (PDF/TXT parser)
-#       3) Embed jobs + resume (OpenAI embeddings; REQUIRED)
-#       4) Rank jobs vs resume (cosine similarity, Top-10 CSV + viewer)
-#
-#  Usage:
-#     python adzuna_Toolbox_full.py
-#
-#  Requirements (install first):
-#     pip install requests pandas numpy nltk openai pdfplumber
-#
-#  Environment:
-#     OPENAI_API_KEY must be set for stages 3 & 4 (required).
-#       Windows:  setx OPENAI_API_KEY "your_api_key_here"
-#       macOS/Linux: export OPENAI_API_KEY="your_api_key_here"
-#
-#  Outputs:
-#     - Stage 0: adzuna_xxx.csv (raw jobs)
-#     - Stage 1: *_cleaned.csv (adds job_text_clean)
-#     - Stage 2: resume_single.csv (contains resume_text_clean)
-#     - Stage 3: jobs_embeddings.npy, resume_embedding.npy
-#     - Stage 4: top10_ranked_jobs.csv (+ Top-10 viewer)
+#     End-to-end job/resume analyzer using Adzuna API and OpenAI
+#     embeddings. All output files are now saved automatically
+#     into an "assets/" subfolder beside this script.
 # =============================================================
 
 import os, re, time, threading, webbrowser
@@ -35,6 +13,10 @@ import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, scrolledtext, simpledialog
 from datetime import date
+
+# ------------------------------ Global Assets Directory ------------------------------
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+os.makedirs(ASSETS_DIR, exist_ok=True)
 
 # ------------------------------ Optional Dependencies ------------------------------
 try:
@@ -119,10 +101,7 @@ def prompt_adzuna_params(parent):
     max_results = simpledialog.askinteger("Max Results", "How many jobs? (Default 100)", initialvalue=100, minvalue=1, maxvalue=2000, parent=parent) or 100
 
     out_default = f"adzuna_jobs_{date.today().isoformat()}.csv"
-    save_path = filedialog.asksaveasfilename(parent=parent, title="Save Adzuna Jobs CSV As",
-                                             defaultextension=".csv", initialfile=out_default,
-                                             filetypes=[("CSV files","*.csv")])
-    if not save_path: return None
+    save_path = os.path.join(ASSETS_DIR, out_default)
     return {"app_id": app_id, "app_key": app_key, "what": what, "where": where, "max_results": max_results, "save_path": save_path}
 
 def extract_requirements(description: str):
@@ -142,15 +121,10 @@ def action_fetch_adzuna_worker(parent, logbox, params):
     )
     session = requests.Session(); base_url = "https://api.adzuna.com/v1/api/jobs/us/search/{}"
 
-    # Credential test
     try:
         test = session.get(base_url.format(1), params={"app_id": app_id, "app_key": app_key, "results_per_page": 1}, timeout=10)
         if test.status_code == 403:
             popup_error("❌ Invalid Adzuna App ID or Key. Check your credentials.", parent); return
-        elif test.status_code != 200:
-            gui_log(logbox, f"⚠️ Credential check returned {test.status_code}, proceeding anyway...")
-        else:
-            gui_log(logbox, "✅ Credentials verified successfully.")
     except Exception as e:
         popup_error(f"Could not verify credentials:\n{e}", parent); return
 
@@ -158,7 +132,7 @@ def action_fetch_adzuna_worker(parent, logbox, params):
     all_jobs, page, rpp = [], 1, 20
     while len(all_jobs) < max_results:
         url = base_url.format(page)
-        p = {"app_id": app_id, "app_key": app_key, "results_per_page": rpp, "where": location, "what": query, "content-type": "application/json"}
+        p = {"app_id": app_id, "app_key": app_key, "results_per_page": rpp, "where": location, "what": query}
         try:
             resp = session.get(url, params=p, timeout=30); data = resp.json()
         except Exception as e:
@@ -210,7 +184,7 @@ def action_clean_adzuna_worker(parent, logbox, _params):
         popup_error("Could not find a description column.", parent); return
     df["job_text_clean"] = df[desc_col].fillna("").astype(str).apply(lambda t: clean_text_basic(t, lemmatizer, stop_words))
 
-    cleaned_out = os.path.splitext(in_csv)[0] + "_cleaned.csv"
+    cleaned_out = os.path.join(ASSETS_DIR, os.path.basename(os.path.splitext(in_csv)[0]) + "_cleaned.csv")
     df.to_csv(cleaned_out, index=False)
     gui_log(logbox, f"✅ Cleaned CSV saved: {cleaned_out}")
 
@@ -241,12 +215,12 @@ def action_resume_to_csv_worker(parent, logbox, _params):
 
     email = EMAIL_RE.search(text); phone = PHONE_RE.search(text)
     row = {"Email": email.group(0) if email else "", "Phone": phone.group(0) if phone else "", "resume_text_clean": text}
-    out_path = os.path.join(os.path.dirname(path) or ".", "resume_single.csv")
+    out_path = os.path.join(ASSETS_DIR, "resume_single.csv")
     pd.DataFrame([row]).to_csv(out_path, index=False)
     gui_log(logbox, f"✅ Resume CSV saved: {out_path}")
 
 # =============================================================
-#  Stage 3: Embed Jobs + Resume (OpenAI REQUIRED)
+#  Stage 3: Embed Jobs + Resume
 # =============================================================
 def ensure_openai_key(parent):
     if not _OPENAI_OK: popup_error("openai library required. Run: pip install openai", parent); return None
@@ -266,32 +240,30 @@ def embed_texts(client, texts, model):
 def action_embed_jobs_and_resume_worker(parent, logbox, _params):
     if not ensure_openai_key(parent): return
     jobs_csv = filedialog.askopenfilename(parent=parent, title="Select CLEANED Jobs CSV", filetypes=[("CSV files","*.csv")])
-    resume_csv = filedialog.askopenfilename(parent=parent, title="Select Resume CSV", filetypes=[("CSV files","*.csv")])
-    if not jobs_csv or not resume_csv: return
+    resume_csv = os.path.join(ASSETS_DIR, "resume_single.csv")
+    if not jobs_csv or not os.path.exists(resume_csv):
+        popup_error("Missing resume CSV or jobs file.", parent); return
 
     try:
         jobs = pd.read_csv(jobs_csv); resume = pd.read_csv(resume_csv)
     except Exception as e:
         popup_error(f"Failed to read CSVs:\n{e}", parent); return
-    if "job_text_clean" not in jobs.columns:
-        popup_error("Jobs CSV missing 'job_text_clean'.", parent); return
-    if "resume_text_clean" not in resume.columns or len(resume)==0:
-        popup_error("Resume CSV missing 'resume_text_clean' or is empty.", parent); return
+    if "job_text_clean" not in jobs.columns or "resume_text_clean" not in resume.columns:
+        popup_error("Missing required text columns.", parent); return
 
     client = OpenAI()
     job_vecs = embed_texts(client, jobs["job_text_clean"].fillna("").astype(str).tolist(), EMBEDDING_MODEL)
     res_vec  = embed_texts(client, [str(resume.iloc[0]["resume_text_clean"])], EMBEDDING_MODEL)[0]
 
-    np.save("jobs_embeddings.npy", job_vecs)
-    np.save("resume_embedding.npy", np.array(res_vec, dtype=np.float32))
+    np.save(os.path.join(ASSETS_DIR, "jobs_embeddings.npy"), job_vecs)
+    np.save(os.path.join(ASSETS_DIR, "resume_embedding.npy"), np.array(res_vec, dtype=np.float32))
 
-    # Save meta to keep titles/companies for ranking output convenience
     meta_cols = ["job_text_clean"]
     for c in ("Title","Company","Location","Category","RedirectURL"):
         if c in jobs.columns: meta_cols.append(c)
-    jobs[meta_cols].to_csv("jobs_meta.csv", index=False)
+    jobs[meta_cols].to_csv(os.path.join(ASSETS_DIR, "jobs_meta.csv"), index=False)
 
-    gui_log(logbox, "✅ Embeddings created: jobs_embeddings.npy, resume_embedding.npy, jobs_meta.csv")
+    gui_log(logbox, "✅ Embeddings created and stored in assets folder.")
 
 # =============================================================
 #  Stage 4: Rank Jobs vs Resume
@@ -310,48 +282,60 @@ def show_top10_gui(df_top10: pd.DataFrame):
         vals = [f"{r[c]:.4f}" if c=="Score" else r[c] for c in cols_present]
         tree.insert("", tk.END, values=vals)
 
-    btn = tk.Frame(win); btn.pack(fill=tk.X)
-    tk.Label(btn, text="Select a row and click 'Open Link' to visit the job post").pack(side=tk.LEFT, padx=8, pady=8)
     def on_open():
         sel = tree.selection()
-        if not sel: messagebox.showinfo("Open Link","Select a row first.", parent=win); return
+        if not sel:
+            messagebox.showinfo("Open Link", "Select a row first.", parent=win)
+            return
         values = tree.item(sel[0], "values")
         try:
             url = values[cols_present.index("RedirectURL")]
         except Exception:
             url = ""
-        if url: webbrowser.open_new_tab(url)
-        else: messagebox.showinfo("Open Link", "No URL available.", parent=win)
-    tk.Button(btn, text="Open Link", command=on_open).pack(side=tk.RIGHT, padx=8, pady=8)
+        if url:
+            webbrowser.open_new_tab(url)
+        else:
+            messagebox.showinfo("Open Link", "No URL available.", parent=win)
+
+    tk.Button(win, text="Open Link", command=on_open).pack(side=tk.BOTTOM, pady=8)
 
 def action_rank_jobs_openai_worker(parent, logbox, _params):
     if not ensure_openai_key(parent): return
-    # Load embeddings + meta
     try:
-        job_vecs = np.load("jobs_embeddings.npy"); resume_vec = np.load("resume_embedding.npy")
-        meta = pd.read_csv("jobs_meta.csv")
+        job_vecs = np.load(os.path.join(ASSETS_DIR, "jobs_embeddings.npy"))
+        resume_vec = np.load(os.path.join(ASSETS_DIR, "resume_embedding.npy"))
+        meta = pd.read_csv(os.path.join(ASSETS_DIR, "jobs_meta.csv"))
     except Exception as e:
-        popup_error(f"Missing embeddings/meta files. Run Stage 3 first.\n{e}", parent); return
+        popup_error(f"Missing embeddings/meta files in assets. Run Stage 3 first.\n{e}", parent)
+        return
 
     scores = cosine_scores(job_vecs, resume_vec)
     df = meta.copy(); df["_score"] = scores
-    # Create top10 displayable frame
-    rename_map = {"_score":"Score"}
-    for alt_title in ("Title","title"): 
-        if alt_title in df.columns: rename_map[alt_title] = "Title"; break
-    for alt_comp in ("Company","CompanyDisplayName","company.display_name"): 
-        if alt_comp in df.columns: rename_map[alt_comp] = "Company"; break
-    for alt_loc in ("Location","location","LocationRaw","location.display_name"): 
-        if alt_loc in df.columns: rename_map[alt_loc] = "Location"; break
-    for alt_url in ("RedirectURL","redirect_url","URL"): 
-        if alt_url in df.columns: rename_map[alt_url] = "RedirectURL"; break
+
+    rename_map = {"_score": "Score"}
+    for alt in ("Title", "title"):
+        if alt in df.columns:
+            rename_map[alt] = "Title"
+            break
+    for alt in ("Company", "CompanyDisplayName", "company.display_name"):
+        if alt in df.columns:
+            rename_map[alt] = "Company"
+            break
+    for alt in ("Location", "location", "LocationRaw", "location.display_name"):
+        if alt in df.columns:
+            rename_map[alt] = "Location"
+            break
+    for alt in ("RedirectURL", "redirect_url", "URL"):
+        if alt in df.columns:
+            rename_map[alt] = "RedirectURL"
+            break
 
     top10 = df.sort_values("_score", ascending=False).head(10).rename(columns=rename_map).copy()
-    top10["Rank"] = np.arange(1, len(top10)+1)
-    cols_final = [c for c in ["Rank","Score","Title","Company","Location","RedirectURL"] if c in top10.columns]
+    top10["Rank"] = np.arange(1, len(top10) + 1)
+    cols_final = [c for c in ["Rank", "Score", "Title", "Company", "Location", "RedirectURL"] if c in top10.columns]
     top10 = top10[cols_final]
 
-    out_path = "top10_ranked_jobs.csv"
+    out_path = os.path.join(ASSETS_DIR, "top10_ranked_jobs.csv")
     top10.to_csv(out_path, index=False)
     gui_log(logbox, f"✅ Top 10 saved: {out_path}")
     try:
@@ -390,13 +374,18 @@ class ToolboxApp(tk.Tk):
 
     def run_threaded(self, target):
         def wrapper():
-            try: target()
-            finally: self.lock(False)
-        self.lock(True); threading.Thread(target=wrapper, daemon=True).start()
+            try:
+                target()
+            finally:
+                self.lock(False)
+        self.lock(True)
+        threading.Thread(target=wrapper, daemon=True).start()
 
     def run_fetch(self):
         params = prompt_adzuna_params(self)
-        if not params: gui_log(self.log, "Adzuna fetch: canceled."); return
+        if not params:
+            gui_log(self.log, "Adzuna fetch: canceled.")
+            return
         self.run_threaded(lambda: action_fetch_adzuna_worker(self, self.log, params))
 
     def run_clean(self):
@@ -410,6 +399,7 @@ class ToolboxApp(tk.Tk):
 
     def run_rank(self):
         self.run_threaded(lambda: action_rank_jobs_openai_worker(self, self.log, {}))
+
 
 if __name__ == "__main__":
     app = ToolboxApp()
