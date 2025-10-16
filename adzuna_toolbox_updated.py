@@ -220,7 +220,7 @@ def action_resume_to_csv_worker(parent, logbox, _params):
     gui_log(logbox, f"✅ Resume CSV saved: {out_path}")
 
 # =============================================================
-#  Stage 3: Embed Jobs + Resume
+#  Stage 3: Embed Jobs + Resume takes in resume CSV. and then embeds it via OPENAI
 # =============================================================
 def ensure_openai_key(parent):
     if not _OPENAI_OK: popup_error("openai library required. Run: pip install openai", parent); return None
@@ -266,7 +266,7 @@ def action_embed_jobs_and_resume_worker(parent, logbox, _params):
     gui_log(logbox, "✅ Embeddings created and stored in assets folder.")
 
 # =============================================================
-#  Stage 4: Rank Jobs vs Resume
+#  Stage 4: Rank Jobs vs Resume ranks the jobs based on the resume and then displays them in a pop up window allowing user to click on them to go to them on the web
 # =============================================================
 def show_top10_gui(df_top10: pd.DataFrame):
     win = tk.Toplevel(); win.title("Top 10 Job Matches"); win.geometry("1000x560")
@@ -344,7 +344,7 @@ def action_rank_jobs_openai_worker(parent, logbox, _params):
         show_top10_gui(top10)
 
 # =============================================================
-#  GUI Application
+#  GUI Application Creates the GUI for the program and sets up what the buttoms do.
 # =============================================================
 class ToolboxApp(tk.Tk):
     def __init__(self):
