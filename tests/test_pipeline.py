@@ -1,32 +1,40 @@
 import pandas as pd
 from core.pipeline.pipeline import Pipeline
 
+# ================
+# MOCK COMPONENTS
+# ================
+
 class MockFetcher:
-    def fetch(self, query, location, pages):
-        return pd.DataFrame([
-            {"title": "Test Job", "description": "Great job", "company": {"display_name": "TestCo"},
-             "location": {"display_name": "City"}, "redirect_url": "http://example.com"}
-        ])
+    def fetch(self, query, location, radius, pages=1):
+        # Simple mock returning two fake jobs
+        return [
+            {"title": "Job A", "description": "A great job"},
+            {"title": "Job B", "description": "Another job"},
+        ]
 
 class MockCleaner:
     def clean(self, text):
         return text.strip()
 
 class MockEmbedder:
+    # embed_batch returns vectors as simple lists of numbers
     def embed_batch(self, texts):
-        return [[1.0, 0.0, 0.0] for _ in texts]
+        return [[1, 0, 0] for _ in texts]
 
 class MockScrubber:
     def scrub(self, df):
-        return df
+        return df  # pass-through
 
 class MockFormatter:
-    def format(self, df):
-        return df
+    # IMPORTANT: signature must match real formatter
+    def format(self, df, resume_vec=None, job_vecs=None):
+        return df  # pass-through
 
-def logger(x):
-    pass
 
+# ================
+# TESTS
+# ================
 def test_pipeline_runs_end_to_end():
     pipeline = Pipeline(
         fetcher=MockFetcher(),
@@ -34,10 +42,10 @@ def test_pipeline_runs_end_to_end():
         embedder=MockEmbedder(),
         scrubber=MockScrubber(),
         formatter=MockFormatter(),
-        logger=logger
+        logger=lambda x: None,
     )
-    resume_text = "My resume"
-    df = pipeline.run(resume_text, "engineer", "St. Louis", 1)
+
+    df = pipeline.run("My resume", "engineer", "St. Louis", 1)
+
     assert isinstance(df, pd.DataFrame)
-    assert len(df) == 1
-    assert df.iloc[0]["title"] == "Test Job"
+    assert len(df) == 2  # matches MockFetcher

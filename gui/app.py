@@ -147,7 +147,10 @@ class App:
         # Initialize modules
         fetcher = AdzunaFetcher(app_id, app_key, self.log)
         cleaner = ResumeCleaner()
-        embedder = OpenAIEmbedder(self.log)
+
+        # FIX APPLIED HERE — remove invalid logger argument
+        embedder = OpenAIEmbedder()     # ← FIXED
+
         scrubber = Scrubber()
         formatter = JobFormatter()
         pipeline = Pipeline(fetcher, cleaner, embedder, scrubber, formatter, self.log)

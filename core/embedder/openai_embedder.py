@@ -1,19 +1,24 @@
-
-import os
 from openai import OpenAI
+import numpy as np
 
 class OpenAIEmbedder:
-    def __init__(self, logger):
-        api_key=os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY not set in environment.")
-        self.client=OpenAI(api_key=api_key)
-        self.log=logger
+    """
+    Embeds text using OpenAI's embedding models.
+    Produces numpy arrays for direct cosine similarity.
+    """
+
+    def __init__(self, model="text-embedding-3-small"):
+        self.client = OpenAI()
+        self.model = model
 
     def embed_batch(self, texts):
-        self.log("[Embedding] Creating embeddings...")
-        resp=self.client.embeddings.create(
-            model="text-embedding-3-small",
+        # Ensure valid strings
+        texts = [str(t) for t in texts]
+
+        response = self.client.embeddings.create(
+            model=self.model,
             input=texts
         )
-        return [d.embedding for d in resp.data]
+
+        # Return embeddings as numpy arrays
+        return [np.array(item.embedding) for item in response.data]

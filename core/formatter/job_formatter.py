@@ -1,28 +1,49 @@
-# core/formatter/job_formatter.py
+import pandas as pd
+import numpy as np
 
 class JobFormatter:
-    def format(self, df):
+    """
+    Formats job results:
+      - Extracts company/location names
+      - Computes cosine similarity using OpenAI vectors
+      - Sorts by similarity score
+    """
+
+    def format(self, df: pd.DataFrame, resume_vec=None, job_vecs=None) -> pd.DataFrame:
         df = df.copy()
 
-        # Extract clean company names
-        def clean_company(c):
-            if isinstance(c, dict):
-                return c.get("display_name", "")
-            return str(c)
+        if df.empty:
+            return df
 
-        # Extract clean location names
-        def clean_location(loc):
-            if isinstance(loc, dict):
-                # Prefer display_name if available
-                if "display_name" in loc:
-                    return loc["display_name"]
-                # Otherwise join the 'area' array
-                if "area" in loc and isinstance(loc["area"], list):
-                    return ", ".join(loc["area"])
-            return str(loc)
+        # ---- Extract nested "display_name" fields ----
+        if "company" in df.columns:
+            df["company"] = df["company"].apply(
+                lambda c: c.get("display_name") if isinstance(c, dict) else c
+            )
 
-        df["company"] = df["company"].apply(clean_company)
-        df["location"] = df["location"].apply(clean_location)
+        if "location" in df.columns:
+            df["location"] = df["location"].apply(
+                lambda loc: loc.get("display_name") if isinstance(loc, dict) else loc
+            )
 
-        keep = ["title", "company", "location", "description", "redirect_url"]
-        return df[keep]
+        # ---- REAL cosine similarity ----
+        if resume_vec is not None and job_vecs is not None:
+            resume_vec = np.array(resume_vec)
+            scores = []
+
+            for vec in job_vecs:
+                vec = np.array(vec)
+
+                num = np.dot(resume_vec, vec)
+                den = np.linalg.norm(resume_vec) * np.linalg.norm(vec)
+                sim = num / den if den != 0 else 0.0
+
+                scores.append(float(sim))
+
+            df["score"] = scores
+        else:
+            df["score"] = 1.0  # fallback
+
+        # Sort highest score → lowest
+        df = df.sort_values(by="score", ascending=False).reset_index(drop=True)
+        return df
